@@ -128,9 +128,12 @@ export interface SessionRecord {
     TossRewardAd.tsx
   hooks/
   lib/
+    api/
+    storage/
     storage.ts
     types.ts
     utils.ts
+    workouts.ts
   main.tsx
   pages/
     Home.tsx
@@ -142,9 +145,12 @@ export interface SessionRecord {
   vite-env.d.ts
 
 ### Exports (src/lib/)
+- api/client.ts: export type ApiClientError = | ApiError | "BASE_URL_MISSING" | "NETWORK_ERROR" | "PARSE_ERROR" | "UNKNOWN"; export type ApiResult<T> = |; export function createSession( req: CreateSessionRequest ): Promise<ApiResult<CreateSessionResponse>>; export function submitFeedback( sessionId: SessionId, req: SubmitFeedbackRequest ): Promise<ApiResult<SubmitFeedbackResp; export function generateReport( req: GenerateReportRequest ): Promise<ApiResult<GenerateReportResponse>>
+- storage/safeStorage.ts: export function safeJsonParse<T = unknown>( raw: string ):; export function safeSetItem( key: string, value: string ):; export function safeGetItem(key: string): string | null
 - storage.ts: export function getItem<T>(key: string): T | null; export function setItem<T>(key: string, value: T): void; export function removeItem(key: string): void
 - types.ts: export type FitnessGoal = '체중감량' | '근력증가' | '자세교정'; export type FitnessLevel = '초급' | '중급' | '상급'; export type WorkoutId = 'squat' | 'pushup' | 'plank'; export type SessionId = string; export type ReportId = string; export interface UserProfile; export interface AiDisclosureState; export interface PremiumState
 - utils.ts: export function cn(...classes: (string | boolean | undefined | null)[]): string; export function formatNumber(n: number): string; export function formatCurrency(n: number, currency = 'KRW'): string
+- workouts.ts: export const WORKOUTS: WorkoutDefinition[] = [; export function getWorkoutById(id: WorkoutId): WorkoutDefinition | null
 
 ### Components (src/components/)
 - AdSlot.tsx: AdSlot
@@ -161,9 +167,13 @@ export interface SessionRecord {
 - SummaryHero.tsx: SummaryHero
 - TossPurchase.tsx: TossPurchase
 - TossRewardAd.tsx: TossRewardAd
+
+### Module Dependencies (import graph)
+  lib/workouts.ts → imports: lib/types
 CRITICAL: Before creating any new function, type, or component, check the list above. If something similar exists, import and use it.
 
 ## Already Implemented (do NOT duplicate or overwrite)
 - 0001: 전 엔티티/API/RouteState 타입 정의(types.ts) (files: src/lib/types.ts)
 - 0002: safeStorage: localStorage 안전 parse/쓰기(Quota) 유틸 (files: src/lib/storage/safeStorage.ts)
 - 0005: 번들 운동 정의 3종 상수 + 조회 유틸 (files: src/lib/workouts.ts)
+- 0007: 선택적 외부 AI API 클라이언트(fetch 래퍼) (files: src/lib/api/client.ts)
