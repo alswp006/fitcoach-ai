@@ -165,3 +165,4 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 
 ## Already Implemented (do NOT duplicate or overwrite)
 - 0001: 전 엔티티/API/RouteState 타입 정의(types.ts) (files: src/lib/types.ts)
+- 0002: safeStorage: localStorage 안전 parse/쓰기(Quota) 유틸 (files: src/lib/storage/safeStorage.ts)
