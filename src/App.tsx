@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import WorkoutDetail from './pages/WorkoutDetail';
+import Report from './pages/Report';
 import { AppStoreProvider } from './lib/store/AppStore';
 import { AppToastProvider } from './components/AppToastProvider';
 
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/workouts/:workoutId" element={<WorkoutDetail />} />
+          <Route path="/report" element={<Report />} />
           {DevTdsGallery && (
             <Route
               path="/__tds-gallery"

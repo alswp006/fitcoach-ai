@@ -16,7 +16,6 @@ import React from "react";
 import { vi } from "vitest";
 
 export const mockNavigate = vi.fn();
-export const mockLocation = { pathname: "/", search: "", state: null, key: "default" };
 
 // ── TDS (@toss/tds-mobile) ──
 // TDS components use CSS-in-JS + layout hooks that crash in jsdom.
@@ -307,7 +306,14 @@ export function mockTossRewardAd() {
 }
 
 // ── react-router-dom ──
-// Preserve actual router + override useNavigate for assertion.
+// Preserve actual router (incl. real useLocation/location.state) + override
+// useNavigate for assertion.
+// NOTE: vi.mock calls are hoisted to the top of whichever file they are
+// textually written in, regardless of enclosing function scope — so this
+// factory runs unconditionally as soon as anything is imported from this
+// module, even if mockRouter() is never called. Do NOT stub useLocation with
+// a static object here (it silently breaks any page relying on real
+// location.state) — always spread the real `actual` router.
 export function mockRouter() {
   vi.mock("react-router-dom", async () => {
     const actual = await vi.importActual<typeof import("react-router-dom")>(
@@ -316,7 +322,6 @@ export function mockRouter() {
     return {
       ...actual,
       useNavigate: () => mockNavigate,
-      useLocation: () => mockLocation,
     };
   });
 }
