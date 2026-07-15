@@ -114,6 +114,7 @@ export interface SessionRecord {
   components/
     AdSlot.tsx
     Amount.tsx
+    AppToastProvider.tsx
     BottomCTA.tsx
     Card.tsx
     CountUp.tsx
@@ -122,6 +123,7 @@ export interface SessionRecord {
     PageShell.tsx
     ScreenScaffold.tsx
     Sparkline.tsx
+    StateSections.tsx
     StateView.tsx
     SummaryHero.tsx
     TossPurchase.tsx
@@ -133,12 +135,18 @@ export interface SessionRecord {
     session/
     storage/
     storage.ts
+    store/
     types.ts
     utils.ts
     workouts.ts
   main.tsx
   pages/
+    History.tsx
     Home.tsx
+    Premium.tsx
+    Profile.tsx
+    Report.tsx
+    WorkoutDetail.tsx
     __TdsGallery.tsx
   styles/
     globals.css
@@ -164,20 +172,17 @@ export interface SessionRecord {
 - storage.ts: export function getItem<T>(key: string): T | null; export function setItem<T>(key: string, value: T): void; export function removeItem(key: string): void
 - types.ts: export type FitnessGoal = '체중감량' | '근력증가' | '자세교정'; export type FitnessLevel = '초급' | '중급' | '상급'; export type WorkoutId = 'squat' | 'pushup' | 'plank'; export type SessionId = string; export type ReportId = string; export interface UserProfile; export interface AiDisclosureState; export interface PremiumState
 - utils.ts: export function cn(...classes: (string | boolean | undefined | null)[]): string; export function formatNumber(n: number): string; export function formatCurrency(n: number, currency = 'KRW'): string
-- workouts.ts: export const WORKOUTS: WorkoutDefinition[] = [; export function getWorkoutById(id: WorkoutId): WorkoutDefinition | null
-
-### Components (src/components/)
-- AdSlot.tsx: Ad...
+- workouts.ts: export const WORKOUTS: Work...
 CRITICAL: Before creating any new function, type, or component, check the list above. If something similar exists, import and use it.
 
 ## Already Implemented (do NOT duplicate or overwrite)
 - 0001: 전 엔티티/API/RouteState 타입 정의(types.ts) (files: src/lib/types.ts)
 - 0002: safeStorage: localStorage 안전 parse/쓰기(Quota) 유틸 (files: src/lib/storage/safeStorage.ts)
-- 0005: 번들 운동 정의 3종 상수 + 조회 유틸 (files: src/lib/workouts.ts)
-- 0007: 선택적 외부 AI API 클라이언트(fetch 래퍼) (files: src/lib/api/client.ts)
 - 0004: Sessions/Reports CRUD + 페이지네이션 + orphan GC (files: src/lib/storage/sessionsStorage.ts, src/lib/storage/reportsStorage.ts, src/lib/storage/pagination.ts)
-- 0008: AI API 엔드포인트 함수(세션/피드백/리포트) + 로컬 폴백 인터페이스 (files: src/lib/api/endpoints.ts)
+- 0005: 번들 운동 정의 3종 상수 + 조회 유틸 (files: src/lib/workouts.ts)
 - 0006: AppStore(Context)로 프로필/프리미엄/AI고지/프로모션 상태 제공 (files: src/lib/store/AppStore.tsx)
+- 0007: 선택적 외부 AI API 클라이언트(fetch 래퍼) (files: src/lib/api/client.ts)
+- 0008: AI API 엔드포인트 함수(세션/피드백/리포트) + 로컬 폴백 인터페이스 (files: src/lib/api/endpoints.ts)
 - 0009: 로컬 더미 생성 로직(플랜/피드백/리포트 템플릿) (files: src/lib/ai/localGenerators.ts)
 - 0010: 세션 생성 유틸(세션ID/초기 SessionRecord 빌더) (files: src/lib/session/sessionFactory.ts)
 - 0011: 공용 UI: ScreenScaffold + AppToastProvider + Empty/Error 섹션 (files: src/components/ScreenScaffold.tsx, src/components/AppToastProvider.tsx, src/components/StateSections.tsx)
@@ -185,3 +190,6 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0014: S3 운동 상세('/workouts/:workoutId') 페이지 구현(세션 시작/프리미엄 잠금) (files: src/pages/WorkoutDetail.tsx)
 - 0017: S6 AI 리포트('/report') 기본 구현(원격 옵션 + 로컬 폴백 + AI 라벨) (files: src/pages/Report.tsx)
 - 0018: S7 기록('/history') 기본 구현(20개 페이지네이션 + 더 보기) (files: src/pages/History.tsx)
+- 0019: S8 프리미엄('/premium') 기본 구현(IAP 버튼 + 30일 부여) (files: src/pages/Premium.tsx)
+- 0012: S1 홈('/') 페이지 구현(운동 3개 + 프로필 Empty/Error + 배너) (files: src/pages/Home.tsx)
+- heal-1-02: 0020/0021 최종 라우팅 통합 패킷 중복 제거 및 단일화 (files: App.tsx, src/router/*)
