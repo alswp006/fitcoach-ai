@@ -31,7 +31,7 @@ describe('AC1: sessionsStorage CRUD operations', () => {
     const result = load();
 
     expect(Array.isArray(result)).toBe(true);
-    expect(result.length).toBe(0);
+    expect((result as Session[]).length).toBe(0);
   });
 
   it('AC1[P0]: save() should persist sessions array to localStorage', async () => {
@@ -79,7 +79,7 @@ describe('AC1: sessionsStorage CRUD operations', () => {
     ];
 
     save(sessions);
-    const loaded = load();
+    const loaded = load() as Session[];
 
     expect(loaded.length).toBe(1);
     expect(loaded[0].id).toBe('session-1');
