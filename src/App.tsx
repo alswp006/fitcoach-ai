@@ -5,6 +5,7 @@ import Profile from './pages/Profile';
 import WorkoutDetail from './pages/WorkoutDetail';
 import Report from './pages/Report';
 import History from './pages/History';
+import Premium from './pages/Premium';
 import { AppStoreProvider } from './lib/store/AppStore';
 import { AppToastProvider } from './components/AppToastProvider';
 
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/workouts/:workoutId" element={<WorkoutDetail />} />
           <Route path="/report" element={<Report />} />
           <Route path="/history" element={<History />} />
+          <Route path="/premium" element={<Premium />} />
           {DevTdsGallery && (
             <Route
               path="/__tds-gallery"
