@@ -2,7 +2,9 @@ import { Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import WorkoutDetail from './pages/WorkoutDetail';
 import { AppStoreProvider } from './lib/store/AppStore';
+import { AppToastProvider } from './components/AppToastProvider';
 
 // Dev-only TDS Gallery route — `import.meta.env.DEV` is statically replaced
 // (true in dev, false in prod) so the entire import + Route is tree-shaken
@@ -14,20 +16,23 @@ const DevTdsGallery = import.meta.env.DEV
 export default function App() {
   return (
     <AppStoreProvider>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/profile" element={<Profile />} />
-        {DevTdsGallery && (
-          <Route
-            path="/__tds-gallery"
-            element={
-              <Suspense fallback={null}>
-                <DevTdsGallery />
-              </Suspense>
-            }
-          />
-        )}
-      </Routes>
+      <AppToastProvider>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/workouts/:workoutId" element={<WorkoutDetail />} />
+          {DevTdsGallery && (
+            <Route
+              path="/__tds-gallery"
+              element={
+                <Suspense fallback={null}>
+                  <DevTdsGallery />
+                </Suspense>
+              }
+            />
+          )}
+        </Routes>
+      </AppToastProvider>
     </AppStoreProvider>
   );
 }
