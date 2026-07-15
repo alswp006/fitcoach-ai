@@ -181,3 +181,4 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0009: 로컬 더미 생성 로직(플랜/피드백/리포트 템플릿) (files: src/lib/ai/localGenerators.ts)
 - 0010: 세션 생성 유틸(세션ID/초기 SessionRecord 빌더) (files: src/lib/session/sessionFactory.ts)
 - 0011: 공용 UI: ScreenScaffold + AppToastProvider + Empty/Error 섹션 (files: src/components/ScreenScaffold.tsx, src/components/AppToastProvider.tsx, src/components/StateSections.tsx)
+- 0013: S2 프로필('/profile') 페이지 구현(검증/저장/키보드) (files: src/pages/Profile.tsx)

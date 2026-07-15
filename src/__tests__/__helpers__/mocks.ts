@@ -140,6 +140,17 @@ export function mockTds() {
     BottomCTA: ({ children }: any) =>
       React.createElement("div", { "data-slot": "bottom-cta" }, children),
 
+    // FixedBottomCTA IS a <button> itself (.d.ts: HTMLButtonElement ref) — see
+    // src/components/BottomCTA.tsx SubmitFooter. Mock as a real button so
+    // getByRole("button", { name }) works for pages using the golden CTA pattern.
+    FixedBottomCTA: Object.assign(
+      ({ children, onClick, disabled, ...props }: any) =>
+        React.createElement("button", { onClick, disabled, ...props }, children),
+      {
+        Double: ({ children }: any) => React.createElement("div", { "data-slot": "bottom-cta-double" }, children),
+      },
+    ),
+
     BottomSheet: Object.assign(
       ({ children, open }: any) =>
         open ? React.createElement("div", { role: "dialog" }, children) : null,
