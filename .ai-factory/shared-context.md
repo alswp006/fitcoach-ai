@@ -146,7 +146,17 @@ export interface SessionRecord {
 
 ### Exports (src/lib/)
 - api/client.ts: export type ApiClientError = | ApiError | "BASE_URL_MISSING" | "NETWORK_ERROR" | "PARSE_ERROR" | "UNKNOWN"; export type ApiResult<T> = |; export function createSession( req: CreateSessionRequest ): Promise<ApiResult<CreateSessionResponse>>; export function submitFeedback( sessionId: SessionId, req: SubmitFeedbackRequest ): Promise<ApiResult<SubmitFeedbackResp; export function generateReport( req: GenerateReportRequest ): Promise<ApiResult<GenerateReportResponse>>
+- api/endpoints.ts: export type Result<T> = |; export async function createRemoteSession( req: CreateSessionRequest ): Promise<Result<CreateSessionResponse>>; export async function submitRemoteFeedback( sessionId: SessionId, req: SubmitFeedbackRequest ): Promise<Result<SubmitFee; export async function generateRemoteReport( req: GenerateReportRequest ): Promise<Result<GenerateReportResponse>>
+- storage/aiDisclosureStorage.ts: export function loadAiDisclosure(): StorageResult<AiDisclosureState>; export function saveAiDisclosure(state: AiDisclosureState): void; export function deleteAiDisclosure(): void
+- storage/keys.ts: export const STORAGE_KEY_USER_PROFILE = 'fitcoach.userProfile.v1'; export const STORAGE_KEY_PREMIUM = 'fitcoach.premium.v1'; export const STORAGE_KEY_AI_DISCLOSURE = 'fitcoach.aiDisclosure.v1'; export const STORAGE_KEY_PROMO = 'fitcoach.promo.v1'; export const STORAGE_KEY_SESSIONS = 'fitcoach.sessions.v1'; export const STORAGE_KEY_REPORTS = 'fitcoach.reports.v1'
+- storage/pagination.ts: export function getSessionsPage(req: PageRequest): PageResult<Session>
+- storage/premiumStorage.ts: export function loadPremiumState(): StorageResult<PremiumState>; export function savePremiumState(state: PremiumState): void; export function deletePremiumState(): void; export function loadPremiumStateSafe(): PremiumState; export function getIsPremiumActive(): boolean
+- storage/profileStorage.ts: export function loadProfile(): StorageResult<UserProfile>; export function saveProfile(profile: UserProfile): void; export function deleteProfile(): void
+- storage/promoStorage.ts: export function loadPromoState(): StorageResult<PromotionState>; export function savePromoState(state: PromotionState): void; export function deletePromoState(): void
+- storage/reportsStorage.ts: export function upsert( report: Report ):; export function findReportBySessionId(sessionId: SessionId): Report | null; export function garbageCollectOrphanReports():
 - storage/safeStorage.ts: export function safeJsonParse<T = unknown>( raw: string ):; export function safeSetItem( key: string, value: string ):; export function safeGetItem(key: string): string | null
+- storage/sessionsStorage.ts: export function load(): Session[] |; export function save(sessions: Session[]):; export function prepend(session: Session):; export function update( session: Session ):; export function removeSessionsKey(): void; export function dedupeBySessionId(sessions: Session[]): Session[]
+- storage/storageResult.ts: export interface StorageResult<T>
 - storage.ts: export function getItem<T>(key: string): T | null; export function setItem<T>(key: string, value: T): void; export function removeItem(key: string): void
 - types.ts: export type FitnessGoal = '체중감량' | '근력증가' | '자세교정'; export type FitnessLevel = '초급' | '중급' | '상급'; export type WorkoutId = 'squat' | 'pushup' | 'plank'; export type SessionId = string; export type ReportId = string; export interface UserProfile; export interface AiDisclosureState; export interface PremiumState
 - utils.ts: export function cn(...classes: (string | boolean | undefined | null)[]): string; export function formatNumber(n: number): string; export function formatCurrency(n: number, currency = 'KRW'): string
@@ -178,3 +188,4 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0005: 번들 운동 정의 3종 상수 + 조회 유틸 (files: src/lib/workouts.ts)
 - 0007: 선택적 외부 AI API 클라이언트(fetch 래퍼) (files: src/lib/api/client.ts)
 - 0004: Sessions/Reports CRUD + 페이지네이션 + orphan GC (files: src/lib/storage/sessionsStorage.ts, src/lib/storage/reportsStorage.ts, src/lib/storage/pagination.ts)
+- 0008: AI API 엔드포인트 함수(세션/피드백/리포트) + 로컬 폴백 인터페이스 (files: src/lib/api/endpoints.ts)
