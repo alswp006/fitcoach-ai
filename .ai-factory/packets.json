@@ -1,0 +1,686 @@
+[
+  {
+    "id": "0001",
+    "title": "전 엔티티/API/RouteState 타입 정의(types.ts)",
+    "epic": "Epic 1 (Data/Storage)",
+    "task": {
+      "description": "SPEC의 Data Models, 세션/리포트 정규 스키마, 페이지네이션 계약, 선택적 외부 API 요청·응답 타입과 RouteState를 src/lib/types.ts에 런타임 코드 없이 정의해요. 이후 모든 페이지가 동일한 state 계약으로 navigate/location.state를 캐스팅 가능해야 해요.",
+      "acceptance_criteria": [
+        "src/lib/types.ts에 명시된 타입(WorkoutDefinition/UserProfile/SessionRecord/Report/PageRequest/PageResult/API 요청·응답/ApiError/RouteState)이 모두 export되고, 런타임 값(export const/enum)이 없어야 한다",
+        "RouteState 키가 SPEC의 문자열과 정확히 일치하고 각 값의 shape가 DoD와 일치해야 한다(누락/오타 시 fail)",
+        "vite build 또는 npm run typecheck가 타입 에러 없이 통과해야 한다"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/lib/types.ts"
+    ],
+    "definition_of_done": [
+      "런타임 코드 0줄(타입/인터페이스만)",
+      "RouteState 계약을 다른 파일에서 import 가능",
+      "typecheck 통과"
+    ],
+    "depends_on": [],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0002",
+    "title": "safeStorage: localStorage 안전 parse/쓰기(Quota) 유틸",
+    "epic": "Epic 1 (Data/Storage)",
+    "task": {
+      "description": "localStorage 접근 공통 유틸(safeJsonParse/safeGetItem/safeSetItem)을 구현해요. JSON 파싱 실패와 QuotaExceededError를 명확히 구분하고, 어떤 예외도 rethrow/console.error 없이 흡수해 앱 크래시를 방지해요.",
+      "acceptance_criteria": [
+        "safeJsonParse<T>(raw) 호출 시 JSON.parse 성공이면 {ok:true,value}를, 실패면 {ok:false,error:'PARSE_ERROR'}를 반환해야 한다(throw 시 fail)",
+        "safeSetItem(key,value)에서 QuotaExceededError(또는 동등 name/code) 발생 시 {ok:false,error:'QUOTA_EXCEEDED'}를 반환하고 예외를 rethrow하지 않아야 한다",
+        "safeGetItem(key)에서 예외가 발생해도 null을 반환해야 하며 앱이 컴파일되어야 한다"
+      ]
+    },
+    "covers": [
+      "F7-AC-6"
+    ],
+    "files": [
+      "src/lib/storage/safeStorage.ts"
+    ],
+    "definition_of_done": [
+      "console.error 미사용",
+      "예외 rethrow 없음",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0003",
+    "title": "Singleton 스토리지 CRUD: 프로필/프리미엄/AI고지/프로모션",
+    "epic": "Epic 1 (Data/Storage)",
+    "task": {
+      "description": "UserProfile/PremiumState/AiDisclosureState/PromotionState를 각 localStorage 키 단위로 로드/세이브/삭제하는 CRUD를 분리 파일로 구현해요. Premium은 만료 판정(getIsPremiumActive)과 파싱 실패 안전 로드(loadPremiumStateSafe)를 제공해요.",
+      "acceptance_criteria": [
+        "keys.ts에 'fitcoach.userProfile.v1','fitcoach.premium.v1','fitcoach.aiDisclosure.v1','fitcoach.promo.v1' 상수가 export되어야 한다",
+        "profile/premium/aiDisclosure/promo storage 파일에서 DoD에 명시된 함수 시그니처가 모두 export되고, 파싱 실패 시 {ok:false,error:'PARSE_ERROR'}를 반환해야 한다",
+        "loadPremiumStateSafe()는 키 없음/파싱 실패 시 isPremium=false의 기본 객체를 반환하고 함수 내부에서 console.error 호출이 없어야 한다"
+      ]
+    },
+    "covers": [
+      "S8-AC-S8-5",
+      "F6-AC-5"
+    ],
+    "files": [
+      "src/lib/storage/keys.ts",
+      "src/lib/storage/profileStorage.ts",
+      "src/lib/storage/premiumStorage.ts",
+      "src/lib/storage/aiDisclosureStorage.ts",
+      "src/lib/storage/promoStorage.ts"
+    ],
+    "definition_of_done": [
+      "각 엔티티 키별 CRUD 분리",
+      "Premium 만료 판정 유틸 제공",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0002"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0004",
+    "title": "Sessions/Reports CRUD + 페이지네이션 + orphan GC",
+    "epic": "Epic 1 (Data/Storage)",
+    "task": {
+      "description": "세션(fitcoach.sessions.v1)과 리포트(fitcoach.reports.v1) 컨테이너를 로드/저장/업데이트하고, History용 getSessionsPage(PageRequest→PageResult)와 dedupe 유틸을 제공해요. 세션이 없는 리포트를 정리하는 orphan GC도 포함해요.",
+      "acceptance_criteria": [
+        "sessionsStorage.ts에서 load/save/prepend/update/removeSessionsKey 및 dedupeBySessionId가 export되고, updateSession에서 미존재 id는 {ok:false,error:'NOT_FOUND'}를 반환해야 한다",
+        "pagination.ts의 getSessionsPage(req) 결과는 req.limit만큼만 items를 포함하고 nextCursor가 더 없으면 null이어야 한다(초과 포함 시 fail)",
+        "reportsStorage.ts에서 upsert/findReportBySessionId/garbageCollectOrphanReports가 export되고 Quota/Parse 오류를 Result로 반환해야 한다(throw 시 fail)"
+      ]
+    },
+    "covers": [
+      "S7-AC-S7-4",
+      "S7-AC-S7-5",
+      "S7-AC-S7-7"
+    ],
+    "files": [
+      "src/lib/storage/sessionsStorage.ts",
+      "src/lib/storage/reportsStorage.ts",
+      "src/lib/storage/pagination.ts"
+    ],
+    "definition_of_done": [
+      "세션/리포트 컨테이너 스키마 고정(version:1)",
+      "페이지네이션 계약 준수",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0001",
+      "0002"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0005",
+    "title": "번들 운동 정의 3종 상수 + 조회 유틸",
+    "epic": "Epic 1 (Data/Storage)",
+    "task": {
+      "description": "스쿼트/푸쉬업/플랭크 3개 운동을 번들 상수로 제공하고, id로 조회하는 getWorkoutById 유틸을 만들어요. plank는 premiumOnly=true로 고정해 프리미엄 잠금 흐름에서 사용 가능하게 해요.",
+      "acceptance_criteria": [
+        "WORKOUTS 배열 길이가 정확히 3이고 title이 각각 '스쿼트','푸쉬업','플랭크' 텍스트를 포함해야 한다(하나라도 다르면 fail)",
+        "plank 항목의 premiumOnly가 true여야 한다(false면 fail)",
+        "getWorkoutById(id) 호출 시 존재하면 WorkoutDefinition을, 없으면 null을 반환해야 한다"
+      ]
+    },
+    "covers": [
+      "S1-AC-S1-1",
+      "F2-AC-1"
+    ],
+    "files": [
+      "src/lib/workouts.ts"
+    ],
+    "definition_of_done": [
+      "정확히 3개 운동만 정의",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0006",
+    "title": "AppStore(Context)로 프로필/프리미엄/AI고지/프로모션 상태 제공",
+    "epic": "Epic 1 (Data/Storage)",
+    "task": {
+      "description": "페이지들이 공통으로 사용할 AppStoreProvider와 도메인 훅(useAppProfile/useAppPremium/useAiDisclosure/usePromotion)을 구현해요. 로딩/파싱실패/ready 상태를 노출하고, save/acknowledge 등 쓰기는 Result를 반환해 UI가 토스트로 처리 가능하게 해요.",
+      "acceptance_criteria": [
+        "src/lib/store/AppStore.tsx에서 AppStoreProvider와 4개 훅이 DoD 시그니처대로 export되어야 한다",
+        "useAppProfile().status가 'loading'|'ready'|'parse_error' 중 하나이며, parse_error 시 profile은 null이어야 한다(다르면 fail)",
+        "savePurchase30d/acknowledge/markFirstGranted가 Promise로 Result를 반환하고 내부에서 throw하지 않아야 한다"
+      ]
+    },
+    "covers": [
+      "F6-AC-5",
+      "S8-AC-S8-5"
+    ],
+    "files": [
+      "src/lib/store/AppStore.tsx"
+    ],
+    "definition_of_done": [
+      "Provider 미연결 상태에서도 컴파일",
+      "파싱 실패 상태를 UI가 감지 가능"
+    ],
+    "depends_on": [
+      "0003"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0007",
+    "title": "선택적 외부 AI API 클라이언트(fetch 래퍼)",
+    "epic": "Epic 2 (API/Services)",
+    "task": {
+      "description": "VITE_AI_API_BASE_URL이 설정된 경우에만 호출되는 외부 API 클라이언트를 만들어요. 미설정이면 네트워크를 절대 호출하지 않고 호출자가 로컬 더미 로직으로 폴백할 수 있게 {ok:false}를 반환해요. 에러는 ApiError 타입으로 정규화해요.",
+      "acceptance_criteria": [
+        "VITE_AI_API_BASE_URL이 빈 값/undefined일 때, export된 request 함수 호출이 fetch를 호출하면 fail(즉시 {ok:false,error:'BASE_URL_MISSING'} 형태로 반환)",
+        "HTTP 200대 응답은 JSON으로 파싱해 {ok:true,data}로 반환하고, 400/500대는 {ok:false,error:ApiError}로 반환해야 한다(throw 시 fail)",
+        "어떤 실패 케이스에서도 console.error를 호출하지 않아야 한다"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/lib/api/client.ts"
+    ],
+    "definition_of_done": [
+      "BASE_URL 미설정 폴백 경로 존재",
+      "ApiError 정규화",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "POST {baseUrl}/sessions {CreateSessionRequest} → {CreateSessionResponse} | {ApiError}\nPOST {baseUrl}/feedback {SubmitFeedbackRequest} → {SubmitFeedbackResponse} | {ApiError}\nPOST {baseUrl}/reports {GenerateReportRequest} → {GenerateReportResponse} | {ApiError}",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0008",
+    "title": "AI API 엔드포인트 함수(세션/피드백/리포트) + 로컬 폴백 인터페이스",
+    "epic": "Epic 2 (API/Services)",
+    "task": {
+      "description": "CreateSession/SubmitFeedback/GenerateReport를 호출하는 도메인 함수 레이어를 구현해요. API_BASE_URL이 없거나 실패하면 호출자가 로컬 생성 로직으로 폴백할 수 있도록 동일한 입력·출력 타입을 유지하고 Result 형태로 반환해요.",
+      "acceptance_criteria": [
+        "export 함수 createRemoteSession/submitRemoteFeedback/generateRemoteReport가 각각 Request/Response 타입을 사용하고, 성공 시 {ok:true,value}를 반환해야 한다",
+        "BASE_URL 미설정 또는 client.ts에서 {ok:false}가 내려오면 동일 함수가 throw하지 않고 {ok:false,reason:'REMOTE_UNAVAILABLE'|'REMOTE_ERROR'}를 반환해야 한다",
+        "모든 함수가 컴파일되고, 런타임에서 window 외부 이동(window.open/location.href)을 호출하면 fail"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/lib/api/endpoints.ts"
+    ],
+    "definition_of_done": [
+      "원격 호출 실패를 UI가 분기 처리 가능",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0007"
+    ],
+    "db_schema": "",
+    "api_contract": "createRemoteSession(req: CreateSessionRequest) → Result<CreateSessionResponse>\nsubmitRemoteFeedback(req: SubmitFeedbackRequest) → Result<SubmitFeedbackResponse>\ngenerateRemoteReport(req: GenerateReportRequest) → Result<GenerateReportResponse>",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0009",
+    "title": "로컬 더미 생성 로직(플랜/피드백/리포트 템플릿)",
+    "epic": "Epic 2 (API/Services)",
+    "task": {
+      "description": "VITE_AI_API_BASE_URL 미설정 시에도 앱이 크래시하지 않도록 로컬 더미/템플릿 생성 함수를 제공해요. 텍스트는 한국어 해요체로 고정하고, 리포트 결과에는 항상 'AI가 생성한 결과입니다' 라벨을 UI에서 표시할 수 있도록 메타 필드를 포함해요.",
+      "acceptance_criteria": [
+        "export된 generateLocalPlanSummary/generateLocalFeedback/generateLocalReport가 모두 동기 함수이며, 입력이 비어도 예외를 throw하지 않아야 한다",
+        "generateLocalReport 반환값에는 UI가 라벨을 붙일 수 있는 필드(예: aiGenerated=true 또는 label string)가 포함되어야 한다(없으면 fail)",
+        "함수 결과 텍스트에 외부 앱 설치 유도 문구(다운로드/설치 등)가 포함되면 fail"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/lib/ai/localGenerators.ts"
+    ],
+    "definition_of_done": [
+      "네트워크 없이 동작하는 폴백 제공",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0010",
+    "title": "세션 생성 유틸(세션ID/초기 SessionRecord 빌더)",
+    "epic": "Epic 2 (API/Services)",
+    "task": {
+      "description": "운동 상세에서 '세션 시작' 시 사용할 세션ID 생성과 초기 SessionRecord 생성 유틸을 제공해요. ID는 빈 문자열이 아니어야 하고, createdAt/updatedAt을 채워야 해요. 저장은 스토리지 레이어(prependSession)에서 처리하게 분리해요.",
+      "acceptance_criteria": [
+        "createSessionId()가 호출될 때마다 빈 문자열이 아닌 문자열을 반환해야 한다(''이면 fail)",
+        "buildInitialSessionRecord({workoutId, now})가 SessionRecord 필수 필드를 채워 반환하고 now 인자가 없으면 Date.now()를 사용해야 한다",
+        "유틸 모듈이 localStorage에 직접 접근하면 fail(스토리지 레이어로만 위임)"
+      ]
+    },
+    "covers": [
+      "AC-S3-3"
+    ],
+    "files": [
+      "src/lib/session/sessionFactory.ts"
+    ],
+    "definition_of_done": [
+      "스토리지/페이지와 분리된 순수 유틸",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": ""
+  },
+  {
+    "id": "0011",
+    "title": "공용 UI: ScreenScaffold + AppToastProvider + Empty/Error 섹션",
+    "epic": "Epic 3 (Pages)",
+    "task": {
+      "description": "모든 화면이 Raw div 대신 감쌀 수 있는 ScreenScaffold를 제공하고, 2초 자동 dismiss 토스트(AppToastProvider/useAppToast)를 구현해요. 또한 Empty/Error 상태를 빠르게 구성할 수 있는 공용 섹션 컴포넌트를 제공해 페이지 중복을 줄여요.",
+      "acceptance_criteria": [
+        "ScreenScaffold가 Top을 포함하는 기본 레이아웃 슬롯(content/bottom 등)을 제공하고 export되어야 한다",
+        "useAppToast().showToast(message,durationMs) 호출 시 Toast가 렌더되며 durationMs=2000 기본값이 적용되고, dismiss 시점이 durationMs±100ms 범위여야 한다",
+        "Spacing은 TDS Spacing만 사용하고, 여백을 Tailwind/인라인 padding으로 덮어쓰면 fail"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/components/ScreenScaffold.tsx",
+      "src/components/AppToastProvider.tsx",
+      "src/components/StateSections.tsx"
+    ],
+    "definition_of_done": [
+      "페이지에서 공용 스캐폴드/토스트 재사용 가능",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0006"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "- 공용 레이아웃은 @toss/tds-mobile `Top`, `Spacing`, 필요 시 `Card`로 구성\n- Toast는 @toss/tds-mobile `Toast` 사용, 기본 2초\n- Empty/Error 섹션은 `Asset.ContentIcon`, `Paragraph.Text`, `Button` 조합(버튼 높이 44px 이상)\n- 전체 페이지 골격을 raw div로 만들지 않도록 ScreenScaffold가 상단/본문/하단 슬롯 제공"
+  },
+  {
+    "id": "0012",
+    "title": "S1 홈('/') 페이지 구현(운동 3개 + 프로필 Empty/Error + 배너)",
+    "epic": "Epic 3 (Pages)",
+    "task": {
+      "description": "홈에서 오늘 플랜 요약 카드와 기본 운동 3개 리스트를 렌더링해요. 프로필 미설정이면 Empty UI를, 프로필 파싱 실패면 Error UI와 '초기화'(프로필 키만 삭제)를 제공해요. 운동 탭 시 상세로 이동하고 하단 탭으로 기록/프리미엄 이동을 연결해요.",
+      "acceptance_criteria": [
+        "/ 진입 시 운동 ListRow가 정확히 3개 렌더링되고 각 행에 '스쿼트','푸쉬업','플랭크' 텍스트가 존재해야 한다(AC-S1-1)",
+        "localStorage['fitcoach.userProfile.v1']가 없으면 '프로필을 설정하면 플랜이 생성돼요' 텍스트가 보여야 한다(AC-S1-2)",
+        "fitcoach.userProfile.v1='not-json'이면 에러 문구가 보이고 '초기화' 탭 시 userProfile 키만 삭제되며 sessions 키 값이 변경되면 fail(AC-S1-3)",
+        "'스쿼트' 행 탭 시 라우트가 /workouts/squat가 되어야 한다(AC-S1-4)",
+        "하단 탭 '기록' 탭 시 라우트가 /history가 되어야 한다(AC-S1-5)"
+      ]
+    },
+    "covers": [
+      "AC-S1-1",
+      "AC-S1-2",
+      "AC-S1-3",
+      "AC-S1-4",
+      "AC-S1-5"
+    ],
+    "files": [
+      "src/pages/Home.tsx"
+    ],
+    "definition_of_done": [
+      "data-testid=today-plan-card 포함",
+      "AdSlot이 목록 하단 섹션 사이에 배치",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0005",
+      "0011"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "### S1. 홈(플랜/운동) — `/`\n- **목적**: 오늘의 추천 플랜 요약과 운동 목록에서 세션을 시작한다.\n- **TDS 컴포넌트**\n  - `Top`, `Tab`(콘텐츠 전환용, 선택), `ListRow`, `Button`, `Chip`, `Paragraph.Text`, `Spacing`, `Card`, `Toast`, `AlertDialog`\n  - 하단 탭 네비게이션은 템플릿 `FloatingTabBar`\n  - 배너 광고: `AdSlot`\n- **상태**\n  - Loading: 플랜 생성 중 스켈레톤(카드 자리) + “플랜 불러오는 중” 텍스트\n  - Empty: 프로필 미설정 시 `Asset.ContentIcon` + “프로필을 설정하면 플랜이 생성돼요”\n  - Error: localStorage 파싱 실패 시 “데이터를 불러오지 못했어요” + “초기화” 버튼\n- **터치**\n  - 운동 항목 `ListRow` 전체가 탭 가능(최소 44px)\n  - 하단 1차 액션은 `Button`(block)로 제공\n- **리스트/페이지네이션**\n  - MVP 홈 운동 목록은 번들 상수 3개로 고정이므로 “더 보기(페이지네이션)”을 제공하지 않는다(렌더 개수는 항상 3).\n- **Navigation state contract**\n  - Outgoing\n    - “프로필 설정” → `navigate('/profile')`\n    - 운동 `ListRow` 탭 → `navigate('/workouts/:workoutId', { state: { workoutId: string } })`\n    - “기록” 탭 → `navigate('/history')`\n    - “프리미엄” 탭 → `navigate('/premium')`\n  - Incoming\n    - `location.state` 사용하지 않음 (`undefined`)\n- **Layout/Presentation contract**\n  - 상단: `Top` 고정\n  - 핵심 요약은 `Card` 1개 이상으로 묶고 `data-testid=\"today-plan-card\"` 부여\n  - 카드 아래에 운동 목록 `ListRow` 나열, 섹션 간 간격은 `Spacing size={...}`만 사용\n  - 배너 광고는 **콘텐츠 섹션 사이(목록 하단)** 에 배치, 콘텐츠와 겹치지 않음\n- **초기화(리셋) 동작**\n  - S1의 Error UI에 있는 “초기화”는 **`fitcoach.userProfile.v1`만 삭제**한다(세션/리포트는 보존). (관계/캐스케이드 규칙과 일치)"
+  },
+  {
+    "id": "0013",
+    "title": "S2 프로필('/profile') 페이지 구현(검증/저장/키보드)",
+    "epic": "Epic 3 (Pages)",
+    "task": {
+      "description": "키/몸무게 입력과 goal/level 선택, 음성 피드백 Switch를 포함한 프로필 설정 화면을 구현해요. 로딩 중에는 입력이 disabled여야 하고, 유효성 검증 실패 시 저장을 차단해요. 저장 성공 시 localStorage에 JSON 저장 후 홈으로 이동해요.",
+      "acceptance_criteria": [
+        "최초 진입 로딩 상태에서 키/몸무게 TextField 둘 다 disabled=true여야 한다(AC-S2-1)",
+        "유효 값 입력 후 '저장' 탭 시 fitcoach.userProfile.v1이 유효 JSON으로 저장되고 라우트가 / 로 이동해야 한다(AC-S2-2)",
+        "키=90 입력 후 저장 탭 시 '키는 120~220cm로 입력해주세요'가 표시되고 localStorage 값이 변경되면 fail(AC-S2-3)",
+        "몸무게=250 입력 후 저장 탭 시 '몸무게는 30~200kg로 입력해주세요'가 표시되고 localStorage 값이 변경되면 fail(AC-S2-4)",
+        "Switch(voiceFeedbackEnabled) OFF 후 저장 시 저장된 값이 false여야 한다(AC-S2-5)"
+      ]
+    },
+    "covers": [
+      "AC-S2-1",
+      "AC-S2-2",
+      "AC-S2-3",
+      "AC-S2-4",
+      "AC-S2-5"
+    ],
+    "files": [
+      "src/pages/Profile.tsx"
+    ],
+    "definition_of_done": [
+      "Card로 섹션 분리",
+      "Button display=block 단일 1차 액션",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0011",
+      "0006"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "### S2. 프로필/목표 설정 — `/profile`\n- **목적**: 체력/목표를 입력해 플랜과 피드백 기준을 개인화한다.\n- **TDS 컴포넌트**\n  - `Top`, `TextField`, `Chip`, `Switch`, `Button`, `Paragraph.Text`, `Spacing`, `Toast`, `BottomSheet`(선택)\n- **상태**\n  - Loading: 기존 값 로딩 중 필드 disabled + “불러오는 중”\n  - Empty: 기존 값 없으면 기본값 표시(예: 목표=“체중감량” 미선택)\n  - Error: 저장 실패 시 토스트 “저장에 실패했어요. 다시 시도해주세요”\n- **키보드**\n  - `TextField` 포커스 시 해당 필드가 화면 중앙 이상으로 오도록 스크롤\n  - 하단 고정 CTA가 있다면 키보드 오픈 시 CTA가 입력을 가리지 않도록 레이아웃 전환\n- **Navigation state contract**\n  - Outgoing: 저장 성공 → `navigate('/', { state: { toast: 'saved' } })`\n  - Incoming: `location.state` 선택적 `{ from?: 'home' | 'premium' }`\n- **Layout/Presentation contract**\n  - 입력 폼은 `Card`로 섹션 분리\n  - 제출 버튼은 `Button` `display=\"block\"` 형태로 단일 1차 액션 제공"
+  },
+  {
+    "id": "0014",
+    "title": "S3 운동 상세('/workouts/:workoutId') 페이지 구현(세션 시작/프리미엄 잠금)",
+    "epic": "Epic 3 (Pages)",
+    "task": {
+      "description": "운동 상세 카드(data-testid 포함)와 설명을 표시하고 '세션 시작'으로 세션을 생성해 /coach로 이동해요. 존재하지 않는 workoutId는 에러 UI로 방어해요. premiumOnly 운동은 비프리미엄이면 /premium으로 보내고 /coach 진입을 차단해요.",
+      "acceptance_criteria": [
+        "/workouts/squat 렌더 시 data-testid='workout-detail-card' 요소가 정확히 1개 존재해야 한다(AC-S3-1)",
+        "/workouts/unknown 진입 시 '운동을 찾을 수 없어요'가 보이고 '홈으로' 탭 시 라우트가 /여야 한다(AC-S3-2)",
+        "세션 시작 탭 시 sessions items 길이가 1 증가하고 navigate('/coach',{state:{workoutId,sessionId}})의 sessionId가 빈 문자열이면 fail(AC-S3-3)",
+        "premiumOnly=true 운동에서 isPremiumActive=false일 때 '세션 시작' 탭 시 /coach로 이동하면 fail이고 라우트가 /premium이어야 한다(AC-S3-4)",
+        "세션 저장 시 QuotaExceededError가 발생하면 토스트 문구가 2초(±0.5초) 표시되어야 한다(AC-S3-5)"
+      ]
+    },
+    "covers": [
+      "AC-S3-1",
+      "AC-S3-2",
+      "AC-S3-3",
+      "AC-S3-4",
+      "AC-S3-5"
+    ],
+    "files": [
+      "src/pages/WorkoutDetail.tsx"
+    ],
+    "definition_of_done": [
+      "세션 생성 실패(Quota)에서 크래시 금지",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0005",
+      "0004",
+      "0010",
+      "0006",
+      "0011"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "### S3. 운동 상세/시작 — `/workouts/:workoutId`\n- **목적**: 운동 설명을 보고 세션을 시작한다.\n- **TDS 컴포넌트**\n  - `Top`, `Card`, `Paragraph.Text`, `Button`, `Chip`, `Spacing`, `Toast`\n- **상태**\n  - Loading: workout 정의 로딩 중 “운동 정보를 불러오는 중”\n  - Empty/Error: 존재하지 않는 `workoutId`면 “운동을 찾을 수 없어요” + “홈으로” 버튼\n- **Navigation state contract**\n  - Outgoing: “세션 시작” → `navigate('/coach', { state: { workoutId: string, sessionId: string } })`\n  - Incoming: `location.state = { workoutId: string } | undefined` (URL param 우선)\n- **Layout/Presentation contract**\n  - 운동 설명/주의사항을 `Card`로 묶고 `data-testid=\"workout-detail-card\"` 부여"
+  },
+  {
+    "id": "0015",
+    "title": "S4 실시간 코칭('/coach') 임시 MVP 페이지(세션 진행/종료)",
+    "epic": "Epic 3 (Pages)",
+    "task": {
+      "description": "현재 SPEC 메시지에서 S4 정의가 잘려 있어, 라우팅 크래시 방지를 위한 임시 코칭 페이지를 구현해요. RouteState로 전달된 workoutId/sessionId를 표시하고, '세션 종료'로 /session/summary로 이동만 제공해요. 추후 블루프린트 수신 시 교체해요.",
+      "acceptance_criteria": [
+        "/coach 진입 시 location.state가 없으면 Error 섹션이 렌더되고 '홈으로' 버튼 탭 시 라우트가 /여야 한다",
+        "location.state에 workoutId/sessionId가 있으면 화면에 두 값이 텍스트로 표시되어야 한다(누락 시 fail)",
+        "'세션 종료' 탭 시 navigate('/session/summary',{state:{sessionId}})로 이동해야 하며 sessionId가 빈 문자열이면 fail",
+        "UI는 TDS 컴포넌트(Top/Card/Paragraph.Text/Button/Spacing)만 사용해야 한다"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/pages/Coach.tsx"
+    ],
+    "definition_of_done": [
+      "라우팅으로 진입 가능",
+      "필수 state 누락 시 방어",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0011",
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "(현재 대화에 포함된 SPEC가 S4 중간에서 잘려 상세 블루프린트를 복사할 수 없음)\n- TDS `Top`(제목: 코칭), `Card`(세션 정보), `Paragraph.Text`, `Button`(세션 종료/홈으로), `Spacing`\n- States:\n  - Error: RouteState 누락 시 '세션 정보를 불러오지 못했어요' + '홈으로'\n- Navigation:\n  - Outgoing: 세션 종료 → /session/summary (state: { sessionId })"
+  },
+  {
+    "id": "0016",
+    "title": "S5 세션 요약('/session/summary') 임시 MVP 페이지(리포트 이동 버튼)",
+    "epic": "Epic 3 (Pages)",
+    "task": {
+      "description": "세션 요약 화면 정의가 누락되어, 최소 동작(MVP)으로 sessionId 기반 요약 카드와 'AI 리포트 보기' 버튼을 제공해요. 버튼 탭 시 /report로 이동하며 state로 sessionId를 전달해요. 보상형 광고 게이트/프로모션 지급은 블루프린트 수신 후 확장해요.",
+      "acceptance_criteria": [
+        "/session/summary 진입 시 location.state.sessionId가 없으면 Error 섹션 + '홈으로'가 렌더되고 /로 이동해야 한다",
+        "sessionId가 있으면 화면에 sessionId가 표시되어야 한다(표시 누락 시 fail)",
+        "'AI 리포트 보기' 탭 시 navigate('/report',{state:{sessionId}})로 이동해야 한다",
+        "UI는 TDS 컴포넌트만 사용하고 Spacing은 TDS Spacing만 사용해야 한다"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/pages/SessionSummary.tsx"
+    ],
+    "definition_of_done": [
+      "라우팅 크래시 방지",
+      "리포트 화면으로 state 전달",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0011",
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "(현재 대화에 포함된 SPEC가 S5 정의를 포함하지 않아 임시 화면으로 구현)\n- TDS `Top`, `Card`, `Paragraph.Text`, `Button`, `Spacing`\n- States:\n  - Error: sessionId 누락 시 안내 + '홈으로'\n- Actions:\n  - Primary: 'AI 리포트 보기' → /report (state: { sessionId })"
+  },
+  {
+    "id": "0017",
+    "title": "S6 AI 리포트('/report') 기본 구현(원격 옵션 + 로컬 폴백 + AI 라벨)",
+    "epic": "Epic 3 (Pages)",
+    "task": {
+      "description": "sessionId를 받아 AI 리포트를 생성/표시하는 페이지를 구현해요. VITE_AI_API_BASE_URL이 있으면 원격 호출을 시도하고, 없거나 실패하면 로컬 템플릿으로 생성해요. 결과 영역에는 항상 'AI가 생성한 결과입니다' 라벨을 노출해 정책을 준수해요.",
+      "acceptance_criteria": [
+        "/report 진입 시 location.state.sessionId가 없으면 Error 섹션이 보이고 '홈으로' 탭 시 /로 이동해야 한다",
+        "리포트 생성 성공(원격 또는 로컬) 후 결과 영역에 'AI가 생성한 결과입니다' 텍스트/배지가 화면에 존재해야 한다(없으면 fail)",
+        "VITE_AI_API_BASE_URL 미설정 상태에서 리포트 생성 시 fetch가 호출되면 fail(로컬 폴백만 사용)",
+        "원격 호출 실패/예외 상황에서도 화면이 크래시하지 않고 '다시 시도' 버튼으로 재시도 가능해야 한다"
+      ]
+    },
+    "covers": [],
+    "files": [
+      "src/pages/Report.tsx"
+    ],
+    "definition_of_done": [
+      "원격 옵션 + 로컬 폴백",
+      "AI 라벨 상시 표시",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0008",
+      "0009",
+      "0011",
+      "0001"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "(현재 대화에 포함된 SPEC가 S6 화면 정의/AC를 포함하지 않아 Common Principles 기반으로 구현)\n- TDS `Top`, `Card`, `Paragraph.Text`, `Button`, `Chip`(또는 Badge 역할), `Spacing`, `Toast`, `Skeleton`(로딩)\n- States:\n  - Loading: 생성 중 Skeleton + '리포트 불러오는 중'\n  - Error: 생성 실패 시 오류 문구 + '다시 시도'\n- Policy:\n  - 결과 표시 영역에 항상 'AI가 생성한 결과입니다' 라벨/배지 고정"
+  },
+  {
+    "id": "0018",
+    "title": "S7 기록('/history') 기본 구현(20개 페이지네이션 + 더 보기)",
+    "epic": "Epic 3 (Pages)",
+    "task": {
+      "description": "세션 기록 리스트를 20개 단위로 렌더링하고 '더 보기'로 다음 페이지를 append하는 History 페이지를 구현해요. 파싱 실패 시 Error UI와 '초기화'를 제공해요. 더 보기 로드 실패 시 기존 리스트를 유지하고 토스트만 표시한 뒤 append를 중단해요.",
+      "acceptance_criteria": [
+        "초기 렌더 시 getSessionsPage({limit:20}) 결과 items 길이가 20을 초과해 렌더되면 fail(페이지네이션 강제)",
+        "'더 보기' 탭 시 다음 페이지 items가 기존 리스트 뒤에 append되어 총 렌더 수가 증가해야 한다(중복 sessionId는 dedupe 적용)",
+        "localStorage 파싱 실패(PARSE_ERROR) 상태에서는 Error UI가 렌더되고 '초기화' 탭 시 sessions 키가 제거되어야 한다",
+        "'더 보기' 로드 중 예외/파싱 실패가 발생하면 현재 렌더된 리스트는 유지되고 추가 append가 일어나면 fail"
+      ]
+    },
+    "covers": [
+      "S7-AC-S7-4",
+      "S7-AC-S7-5",
+      "S7-AC-S7-7"
+    ],
+    "files": [
+      "src/pages/History.tsx"
+    ],
+    "definition_of_done": [
+      "초기 20개 제한 + 더 보기",
+      "파싱 실패 방어",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0004",
+      "0011",
+      "0006"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "(현재 대화에 포함된 SPEC가 S7 화면 정의를 포함하지 않아 Common Principles 기반으로 구현)\n- TDS `Top`, `ListRow`(세션 항목), `Button`('더 보기', '초기화'), `Paragraph.Text`, `Spacing`, `Toast`, `Asset.ContentIcon`\n- States:\n  - Empty: 세션 0개면 아이콘 + 안내 + '운동하러 가기'(/)\n  - Error: PARSE_ERROR면 '데이터를 불러오지 못했어요' + '초기화'\n- Pagination:\n  - 최초 20개 렌더\n  - '더 보기'로 다음 페이지 append(실패 시 토스트만, 기존 유지)"
+  },
+  {
+    "id": "0019",
+    "title": "S8 프리미엄('/premium') 기본 구현(IAP 버튼 + 30일 부여)",
+    "epic": "Epic 3 (Pages)",
+    "task": {
+      "description": "프리미엄 구매 화면을 구현해요. TossPurchase 버튼으로 결제를 트리거하고, 구매 성공 콜백에서 프리미엄 30일 부여(AppStore의 savePurchase30d)를 호출해 localStorage에 저장해요. 구매 실패/저장 실패(Quota) 시 토스트를 표시해요.",
+      "acceptance_criteria": [
+        "화면에 TossPurchase 컴포넌트가 렌더되고 sku는 import.meta.env.VITE_TOSS_IAP_SKU를 사용해야 한다(하드코딩이면 fail)",
+        "구매 성공 콜백에서 savePurchase30d가 호출되고, 이후 loadPremiumStateSafe 기준 isPremiumActive가 true로 평가되어야 한다",
+        "저장 시 QUOTA_EXCEEDED 반환이면 토스트로 실패 메시지가 표시되고 isPremiumActive가 true로 바뀌면 fail",
+        "UI는 TDS(Top/Card/Paragraph.Text/Button/Spacing/Toast)만 사용해야 한다"
+      ]
+    },
+    "covers": [
+      "F6-AC-5",
+      "S8-AC-S8-5"
+    ],
+    "files": [
+      "src/pages/Premium.tsx"
+    ],
+    "definition_of_done": [
+      "IAP 연동(템플릿 컴포넌트 사용)",
+      "프리미엄 30일 부여 저장",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0006",
+      "0011"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "(현재 대화에 포함된 SPEC가 S8 상세 블루프린트를 포함하지 않아 MVP 최소 UI로 구현)\n- TDS `Top`(제목: 프리미엄), `Card`(혜택 요약), `Paragraph.Text`, `Spacing`, `Toast`\n- 결제:\n  - 템플릿 `<TossPurchase sku={import.meta.env.VITE_TOSS_IAP_SKU} ... />` 사용\n  - 구매 성공 시 30일 프리미엄 부여(savePurchase30d)\n- 상태:\n  - 이미 프리미엄이면 '프리미엄 이용 중' 안내 텍스트 노출"
+  },
+  {
+    "id": "0020",
+    "title": "App.tsx 라우팅 연결 + Provider 래핑 + 외부 이동 가드 + 리워드 게이트(최종)",
+    "epic": "Epic 4 (Integration)",
+    "task": {
+      "description": "react-router-dom 라우팅을 S1~S8 경로로 연결하고, AppStoreProvider/AppToastProvider로 앱을 래핑해요. 외부 도메인 이동을 차단하는 가드를 설치해 window.open/location.href 사용을 방지해요. 또한 /report 진입은 보상형 광고 게이트(TossRewardAd)로 감싸 최종 페이오프만 게이트해요.",
+      "acceptance_criteria": [
+        "App.tsx에 '/' '/profile' '/workouts/:workoutId' '/coach' '/session/summary' '/report' '/history' '/premium' 라우트가 모두 연결되어야 한다(하나라도 누락 시 fail)",
+        "/report 라우트 element가 <TossRewardAd slotId={import.meta.env.VITE_TOSS_AD_SLOT_ID}>로 감싸져 있어야 한다(미적용 시 fail)",
+        "AppStoreProvider와 AppToastProvider가 라우터 상위에서 1회만 래핑되어야 한다(중복/누락 시 fail)",
+        "외부 이동 가드가 설치되어 런타임에서 window.open 또는 location.href로 외부 도메인 이동을 시도하면 차단 함수가 호출되어야 한다"
+      ]
+    },
+    "covers": [
+      "AC-S1-5"
+    ],
+    "files": [
+      "src/lib/navigation/externalNavigationGuard.ts",
+      "src/App.tsx"
+    ],
+    "definition_of_done": [
+      "모든 라우트 연결 확인",
+      "리워드 게이트는 /report에만 적용",
+      "컴파일 통과"
+    ],
+    "depends_on": [
+      "0012",
+      "0013",
+      "0014",
+      "0015",
+      "0016",
+      "0017",
+      "0018",
+      "0019"
+    ],
+    "db_schema": "",
+    "api_contract": "",
+    "dependencies": [],
+    "ui_requirements": "- App.tsx는 라우팅/Provider/게이트 설치만 담당(페이지 UI 구성은 각 pages에서)\n- 리워드 광고 게이트: `/report` 라우트 element를 `<TossRewardAd slotId={import.meta.env.VITE_TOSS_AD_SLOT_ID}>`로 감싸기\n- 외부 이동 가드: 서비스 정책상 window.open/location.href 기반 외부 도메인 이동 차단\n- 하단 탭 네비게이션(FloatingTabBar)은 홈 화면에서 사용(템플릿 컴포넌트)"
+  },
+  {
+    "id": "0021",
+    "title": "라우팅 와이어링 + Provider 연결 + 통합 폴리시",
+    "epic": "4",
+    "task": {
+      "description": "App.tsx에 모든 페이지(Home.tsx, Profile.tsx, WorkoutDetail.tsx, Coach.tsx, SessionSummary.tsx, Report.tsx, History.tsx, Premium.tsx) Route 연결, main.tsx 수정 금지(@AI:ANCHOR), 광고/결제 연동, 최종 UX 폴리시",
+      "acceptance_criteria": [
+        "App.tsx에 모든 페이지 Route가 정의되어 있다",
+        "모든 navigate() 대상에 Route가 존재한다",
+        "main.tsx의 TDSMobileAITProvider/BrowserRouter가 유지되어 있다",
+        "앱이 '/' 경로에서 정상 렌더링된다"
+      ]
+    },
+    "files": [
+      "src/App.tsx"
+    ],
+    "covers": [],
+    "definition_of_done": [
+      "typecheck pass",
+      "all routes accessible",
+      "no console errors"
+    ],
+    "depends_on": [
+      "0020"
+    ]
+  }
+]
