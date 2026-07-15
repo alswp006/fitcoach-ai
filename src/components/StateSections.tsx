@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Button, Paragraph, Spacing } from "@toss/tds-mobile";
 
 export interface StateSectionProps {
   title: ReactNode;
@@ -8,14 +9,59 @@ export interface StateSectionProps {
   testId?: string;
 }
 
-// Stub — TDD red phase. Only satisfies types so `tsc` passes; behavior is
-// intentionally incomplete until the Coder composes these with TDS Spacing/
-// Paragraph.Text/Button (see src/components/StateView.tsx's EmptyState for the
-// established pattern) per src/__tests__/packet-0011.test.ts.
-export function EmptySection({ title, testId }: StateSectionProps) {
-  return <div data-testid={testId}>{title}</div>;
+function Section({
+  title,
+  description,
+  actionLabel,
+  onAction,
+  testId,
+  actionVariant,
+}: StateSectionProps & { actionVariant: "weak" | "fill" }) {
+  return (
+    <div
+      data-testid={testId}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        textAlign: "center",
+        padding: "48px 24px",
+      }}
+    >
+      <Paragraph.Text typography="t4">{title}</Paragraph.Text>
+      {description ? (
+        <>
+          <Spacing size={4} />
+          <Paragraph.Text typography="t6">{description}</Paragraph.Text>
+        </>
+      ) : null}
+      {actionLabel ? (
+        <>
+          <Spacing size={20} />
+          <Button variant={actionVariant} display="block" onClick={onAction}>
+            {actionLabel}
+          </Button>
+        </>
+      ) : null}
+    </div>
+  );
 }
 
-export function ErrorSection({ title, testId }: StateSectionProps) {
-  return <div data-testid={testId}>{title}</div>;
+/**
+ * 빈 상태 섹션 — 제목 + 설명 + 보조(weak) CTA. TDS Spacing으로 간격 생성(margin/padding 금지).
+ *
+ * Pre-built (재구현 금지): 목록/결과가 비었을 때 사용. StateView.EmptyState와 달리 아이콘 슬롯 없이
+ * 텍스트+액션만 필요한 인라인 섹션에 적합.
+ */
+export function EmptySection(props: StateSectionProps) {
+  return <Section {...props} actionVariant="weak" />;
+}
+
+/**
+ * 에러 상태 섹션 — 제목 + 설명 + 재시도(fill) CTA. TDS Spacing으로 간격 생성(margin/padding 금지).
+ *
+ * Pre-built (재구현 금지): fetch/비동기 작업 실패 시 사용.
+ */
+export function ErrorSection(props: StateSectionProps) {
+  return <Section {...props} actionVariant="fill" />;
 }
