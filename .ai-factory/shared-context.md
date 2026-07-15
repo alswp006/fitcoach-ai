@@ -128,7 +128,9 @@ export interface SessionRecord {
     TossRewardAd.tsx
   hooks/
   lib/
+    ai/
     api/
+    session/
     storage/
     storage.ts
     types.ts
@@ -145,8 +147,10 @@ export interface SessionRecord {
   vite-env.d.ts
 
 ### Exports (src/lib/)
+- ai/localGenerators.ts: export interface LocalReportInput; export interface LocalReport; export function generateLocalPlanSummary(input: string | null | undefined): string; export function generateLocalFeedback(input: string | null | undefined): string; export function generateLocalReport(input: LocalReportInput | null | undefined): LocalReport
 - api/client.ts: export type ApiClientError = | ApiError | "BASE_URL_MISSING" | "NETWORK_ERROR" | "PARSE_ERROR" | "UNKNOWN"; export type ApiResult<T> = |; export function createSession( req: CreateSessionRequest ): Promise<ApiResult<CreateSessionResponse>>; export function submitFeedback( sessionId: SessionId, req: SubmitFeedbackRequest ): Promise<ApiResult<SubmitFeedbackResp; export function generateReport( req: GenerateReportRequest ): Promise<ApiResult<GenerateReportResponse>>
 - api/endpoints.ts: export type Result<T> = |; export async function createRemoteSession( req: CreateSessionRequest ): Promise<Result<CreateSessionResponse>>; export async function submitRemoteFeedback( sessionId: SessionId, req: SubmitFeedbackRequest ): Promise<Result<SubmitFee; export async function generateRemoteReport( req: GenerateReportRequest ): Promise<Result<GenerateReportResponse>>
+- session/sessionFactory.ts: export function createSessionId(): string; export function buildInitialSessionRecord(opts:
 - storage/aiDisclosureStorage.ts: export function loadAiDisclosure(): StorageResult<AiDisclosureState>; export function saveAiDisclosure(state: AiDisclosureState): void; export function deleteAiDisclosure(): void
 - storage/keys.ts: export const STORAGE_KEY_USER_PROFILE = 'fitcoach.userProfile.v1'; export const STORAGE_KEY_PREMIUM = 'fitcoach.premium.v1'; export const STORAGE_KEY_AI_DISCLOSURE = 'fitcoach.aiDisclosure.v1'; export const STORAGE_KEY_PROMO = 'fitcoach.promo.v1'; export const STORAGE_KEY_SESSIONS = 'fitcoach.sessions.v1'; export const STORAGE_KEY_REPORTS = 'fitcoach.reports.v1'
 - storage/pagination.ts: export function getSessionsPage(req: PageRequest): PageResult<Session>
@@ -163,23 +167,7 @@ export interface SessionRecord {
 - workouts.ts: export const WORKOUTS: WorkoutDefinition[] = [; export function getWorkoutById(id: WorkoutId): WorkoutDefinition | null
 
 ### Components (src/components/)
-- AdSlot.tsx: AdSlot
-- Amount.tsx: Amount
-- BottomCTA.tsx: SubmitFooter, ButtonStack
-- Card.tsx: Card
-- CountUp.tsx: CountUp
-- FloatingTabBar.tsx: FloatingTabBar
-- MiniBar.tsx: MiniBar
-- PageShell.tsx: PageShell
-- ScreenScaffold.tsx: ScreenScaffold
-- Sparkline.tsx: Sparkline
-- StateView.tsx: EmptyState, LoadingState
-- SummaryHero.tsx: SummaryHero
-- TossPurchase.tsx: TossPurchase
-- TossRewardAd.tsx: TossRewardAd
-
-### Module Dependencies (import graph)
-  lib/workouts.ts → imports: lib/types
+- AdSlot.tsx: Ad...
 CRITICAL: Before creating any new function, type, or component, check the list above. If something similar exists, import and use it.
 
 ## Already Implemented (do NOT duplicate or overwrite)

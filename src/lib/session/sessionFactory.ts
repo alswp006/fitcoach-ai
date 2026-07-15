@@ -5,7 +5,10 @@ import type { SessionRecord, WorkoutId } from "@/lib/types";
  * @returns Non-empty unique session identifier string
  */
 export function createSessionId(): string {
-  throw new Error("Not implemented");
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 /**
@@ -18,5 +21,18 @@ export function buildInitialSessionRecord(opts: {
   workoutId: WorkoutId;
   now?: number;
 }): SessionRecord {
-  throw new Error("Not implemented");
+  const now = opts.now ?? Date.now();
+  const sessionId = createSessionId();
+
+  return {
+    version: 1,
+    sessionId,
+    id: sessionId,
+    workoutId: opts.workoutId,
+    startedAt: now,
+    feedbackCount: 0,
+    feedbackEventsSample: [],
+    createdAt: now,
+    updatedAt: now,
+  };
 }
