@@ -12,6 +12,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     // Playwright 비주얼 스펙은 e2e/에 있다 — vitest 실행에서 제외(기본 제외 + e2e).
-    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
+    // scripts/__tests__는 node:test 러너 전용(스캐너 유틸 테스트) — vitest 실행에서 제외, `test:scripts`로 별도 실행.
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**', 'scripts/__tests__/**'],
   },
 });
