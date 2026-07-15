@@ -2,11 +2,14 @@
  * Shared render + mock utilities for Toss Mini App tests.
  *
  * Usage:
- *   import { renderWithRouter, mockAppState } from "@/__tests__/__helpers__/test-utils";
+ *   import { renderWithRouter } from "@/__tests__/__helpers__/test-utils";
  *
  *   it("renders home page", () => {
  *     renderWithRouter(<Home />);
  *   });
+ *
+ * For AppState/AppStore mocking, import mockAppState from the dedicated
+ * app-state-mock.ts file instead (see that file's docstring for why).
  */
 
 import React, { type ReactElement } from "react";
@@ -28,43 +31,10 @@ export function renderWithRouter(
 }
 
 // ── AppStore / AppState mock factory ──
-// Projects use either @/state/AppStateContext or @/lib/store/AppStore — try both.
-// If the project's actual path differs, override with vi.mock in the test file.
-export function mockAppState(overrides: Partial<AppStateMock> = {}) {
-  const defaultState: AppStateMock = {
-    input: {},
-    applyPreset: vi.fn(),
-    updateField: vi.fn(),
-    setInput: vi.fn(),
-    reset: vi.fn(),
-    isLoading: false,
-    error: null,
-    ...overrides,
-  };
-
-  // Mock both common paths — whichever the project uses will be picked up
-  vi.mock("@/state/AppStateContext", () => ({
-    useAppState: () => defaultState,
-    AppStateProvider: ({ children }: { children: React.ReactNode }) => children,
-  }));
-
-  vi.mock("@/lib/store/AppStore", () => ({
-    useAppStore: () => defaultState,
-    AppStoreProvider: ({ children }: { children: React.ReactNode }) => children,
-  }));
-
-  return defaultState;
-}
-
-export interface AppStateMock {
-  input: Record<string, unknown>;
-  applyPreset: ReturnType<typeof vi.fn>;
-  updateField: ReturnType<typeof vi.fn>;
-  setInput: ReturnType<typeof vi.fn>;
-  reset: ReturnType<typeof vi.fn>;
-  isLoading: boolean;
-  error: string | null;
-}
+// Moved to app-state-mock.ts (NOT re-exported here — re-exporting would still
+// import that module and re-trigger its hoisted vi.mock() on every test that
+// uses renderWithRouter). Import mockAppState directly from that file:
+//   import { mockAppState } from "@/__tests__/__helpers__/app-state-mock";
 
 // ── Fake timers helper for rAF-driven code (animations, countups) ──
 export async function advanceTimers(ms: number) {
