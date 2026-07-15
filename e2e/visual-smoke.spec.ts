@@ -12,6 +12,7 @@ import { test, expect, type Page } from "@playwright/test";
  */
 const ROUTES: { path: string; name: string }[] = [
   { path: "/", name: "home" },
+  { path: "/history", name: "history" },
   // { path: "/result", name: "result" },   // ← 이 앱의 라우트를 추가
   // { path: "/settings", name: "settings" },
 ];
@@ -19,7 +20,19 @@ const ROUTES: { path: string; name: string }[] = [
 /** 데이터가 필요한 화면용 localStorage 시드(앱에 맞게 채워라). 앱 스크립트보다 먼저 실행된다. */
 async function seed(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    // window.localStorage.setItem("MY_STORAGE_KEY", JSON.stringify({ /* ... */ }));
+    const sessions = Array.from({ length: 3 }, (_, i) => ({
+      version: 1,
+      id: `seed-session-${i}`,
+      workoutId: "squat",
+      startedAt: Date.now() - i * 60_000,
+      endedAt: Date.now() - i * 60_000 + 30_000,
+      durationSec: 30,
+      feedbackCount: 0,
+      feedbackEventsSample: [],
+      createdAt: Date.now() - i * 60_000,
+      updatedAt: Date.now() - i * 60_000,
+    }));
+    window.localStorage.setItem("fitcoach.sessions.v1", JSON.stringify(sessions));
   });
 }
 
