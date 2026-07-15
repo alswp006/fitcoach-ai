@@ -183,3 +183,4 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0011: 공용 UI: ScreenScaffold + AppToastProvider + Empty/Error 섹션 (files: src/components/ScreenScaffold.tsx, src/components/AppToastProvider.tsx, src/components/StateSections.tsx)
 - 0013: S2 프로필('/profile') 페이지 구현(검증/저장/키보드) (files: src/pages/Profile.tsx)
 - 0014: S3 운동 상세('/workouts/:workoutId') 페이지 구현(세션 시작/프리미엄 잠금) (files: src/pages/WorkoutDetail.tsx)
+- 0017: S6 AI 리포트('/report') 기본 구현(원격 옵션 + 로컬 폴백 + AI 라벨) (files: src/pages/Report.tsx)
