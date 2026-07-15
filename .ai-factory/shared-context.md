@@ -179,3 +179,4 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0008: AI API 엔드포인트 함수(세션/피드백/리포트) + 로컬 폴백 인터페이스 (files: src/lib/api/endpoints.ts)
 - 0006: AppStore(Context)로 프로필/프리미엄/AI고지/프로모션 상태 제공 (files: src/lib/store/AppStore.tsx)
 - 0009: 로컬 더미 생성 로직(플랜/피드백/리포트 템플릿) (files: src/lib/ai/localGenerators.ts)
+- 0010: 세션 생성 유틸(세션ID/초기 SessionRecord 빌더) (files: src/lib/session/sessionFactory.ts)
