@@ -177,3 +177,4 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0002: safeStorage: localStorage 안전 parse/쓰기(Quota) 유틸 (files: src/lib/storage/safeStorage.ts)
 - 0005: 번들 운동 정의 3종 상수 + 조회 유틸 (files: src/lib/workouts.ts)
 - 0007: 선택적 외부 AI API 클라이언트(fetch 래퍼) (files: src/lib/api/client.ts)
+- 0004: Sessions/Reports CRUD + 페이지네이션 + orphan GC (files: src/lib/storage/sessionsStorage.ts, src/lib/storage/reportsStorage.ts, src/lib/storage/pagination.ts)

@@ -20,7 +20,7 @@ import * as clientModule from "@/lib/api/client";
 const mockClientModule = clientModule as any;
 
 // Import endpoints module
-import * as endpointsModule from "@/lib/api/endpoints";
+import * as endpoints from "@/lib/api/endpoints";
 
 describe("packet-0008: AI API Endpoint Functions (createRemoteSession/submitRemoteFeedback/generateRemoteReport)", () => {
   beforeEach(() => {
@@ -484,7 +484,7 @@ describe("packet-0008: AI API Endpoint Functions (createRemoteSession/submitRemo
         expect.fail("createRemoteSession not implemented");
       }
 
-      const windowOpenSpy = vi.spyOn(window, "open").mockImplementation();
+      const windowOpenSpy = vi.spyOn(window, "open").mockImplementation(() => null);
       const originalHref = window.location.href;
 
       const mockRequest: CreateSessionRequest = {
@@ -521,7 +521,7 @@ describe("packet-0008: AI API Endpoint Functions (createRemoteSession/submitRemo
         expect.fail("createRemoteSession not implemented");
       }
 
-      const windowOpenSpy = vi.spyOn(window, "open").mockImplementation();
+      const windowOpenSpy = vi.spyOn(window, "open").mockImplementation(() => null);
       const originalHref = window.location.href;
 
       const mockRequest: CreateSessionRequest = {
