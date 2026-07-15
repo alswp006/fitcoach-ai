@@ -303,7 +303,7 @@ describe("AC-2: RouteState matches SPEC navigation contracts", () => {
   it("should allow navigation to /profile with optional from state", async () => {
     const types = await import("@/lib/types");
     // S2 Incoming: { from?: 'home' | 'premium' }
-    const profileState: typeof types.RouteState = {
+    const profileState: RouteState = {
       from: "home",
     };
     expect(profileState.from).toMatch(/home|premium/);
@@ -312,7 +312,7 @@ describe("AC-2: RouteState matches SPEC navigation contracts", () => {
   it("should allow navigation to /workouts/:workoutId with workoutId state", async () => {
     const types = await import("@/lib/types");
     // S3 Incoming: { workoutId: string } | undefined
-    const workoutState: typeof types.RouteState = {
+    const workoutState: RouteState = {
       workoutId: "squat",
     };
     expect(typeof workoutState.workoutId).toBe("string");
@@ -321,7 +321,7 @@ describe("AC-2: RouteState matches SPEC navigation contracts", () => {
   it("should allow navigation to /coach with workoutId and sessionId state", async () => {
     const types = await import("@/lib/types");
     // S4 Incoming: { workoutId: string, sessionId: string }
-    const coachState: typeof types.RouteState = {
+    const coachState: RouteState = {
       workoutId: "squat",
       sessionId: "sess_001",
     };
@@ -332,7 +332,7 @@ describe("AC-2: RouteState matches SPEC navigation contracts", () => {
   it("should allow navigation to /session/summary with sessionId state", async () => {
     const types = await import("@/lib/types");
     // S5 Incoming: { sessionId: string }
-    const summaryState: typeof types.RouteState = {
+    const summaryState: RouteState = {
       sessionId: "sess_001",
     };
     expect(typeof summaryState.sessionId).toBe("string");
@@ -341,7 +341,7 @@ describe("AC-2: RouteState matches SPEC navigation contracts", () => {
   it("should allow navigation to /report with sessionId state", async () => {
     const types = await import("@/lib/types");
     // S6 Incoming: { sessionId: string }
-    const reportState: typeof types.RouteState = {
+    const reportState: RouteState = {
       sessionId: "sess_001",
     };
     expect(typeof reportState.sessionId).toBe("string");
@@ -351,7 +351,7 @@ describe("AC-2: RouteState matches SPEC navigation contracts", () => {
     const types = await import("@/lib/types");
     // S2 Outgoing: { toast: 'saved' }
     // S8 Outgoing: { toast: 'premium' }
-    const homeState: typeof types.RouteState = {
+    const homeState: RouteState = {
       toast: "saved",
     };
     expect(homeState.toast).toMatch(/saved|premium/);
@@ -360,7 +360,7 @@ describe("AC-2: RouteState matches SPEC navigation contracts", () => {
   it("should allow navigation to /premium with optional from state", async () => {
     const types = await import("@/lib/types");
     // S8 Incoming: { from?: 'home' | 'report' }
-    const premiumState: typeof types.RouteState = {
+    const premiumState: RouteState = {
       from: "home",
     };
     expect(premiumState.from).toMatch(/home|report/);
@@ -371,7 +371,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
   it("FitnessGoal should allow exactly: 체중감량 | 근력증가 | 자세교정", async () => {
     const types = await import("@/lib/types");
     // Compile-time type check: valid values
-    const goals: typeof types.FitnessGoal[] = [
+    const goals: FitnessGoal[] = [
       "체중감량",
       "근력증가",
       "자세교정",
@@ -381,7 +381,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("FitnessLevel should allow exactly: 초급 | 중급 | 상급", async () => {
     const types = await import("@/lib/types");
-    const levels: typeof types.FitnessLevel[] = [
+    const levels: FitnessLevel[] = [
       "초급",
       "중급",
       "상급",
@@ -391,7 +391,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("UserProfile should have version: 1 and id: 'me' as required", async () => {
     const types = await import("@/lib/types");
-    const profile: typeof types.UserProfile = {
+    const profile: UserProfile = {
       version: 1,
       id: "me",
       heightCm: 170,
@@ -408,7 +408,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("WorkoutId should allow exactly: squat | pushup | plank", async () => {
     const types = await import("@/lib/types");
-    const workoutIds: typeof types.WorkoutId[] = [
+    const workoutIds: WorkoutId[] = [
       "squat",
       "pushup",
       "plank",
@@ -418,7 +418,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("WorkoutDefinition should have id, title, description, targetMinutes, premiumOnly", async () => {
     const types = await import("@/lib/types");
-    const workout: typeof types.WorkoutDefinition = {
+    const workout: WorkoutDefinition = {
       id: "squat" as any,
       title: "스쿼트",
       description: "양발을 어깨너비로 벌리고...",
@@ -431,7 +431,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("PoseFeedbackEvent should have t, code, messageKo, severity", async () => {
     const types = await import("@/lib/types");
-    const feedback: typeof types.PoseFeedbackEvent = {
+    const feedback: PoseFeedbackEvent = {
       t: 1000,
       code: "KNEE_MORE_BEND",
       messageKo: "무릎을 더 굽히세요",
@@ -445,7 +445,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("SessionRecord should have sessionId equals id", async () => {
     const types = await import("@/lib/types");
-    const session: typeof types.SessionRecord = {
+    const session: SessionRecord = {
       version: 1,
       sessionId: "sess_123",
       id: "sess_123",
@@ -461,7 +461,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("Session should have version: 1 and id, workoutId, startedAt", async () => {
     const types = await import("@/lib/types");
-    const session: typeof types.Session = {
+    const session: Session = {
       version: 1,
       id: "sess_123",
       workoutId: "squat" as any,
@@ -483,7 +483,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("Report should have generatedBy: 'AI' and language: 'ko-KR'", async () => {
     const types = await import("@/lib/types");
-    const report: typeof types.Report = {
+    const report: Report = {
       version: 1,
       id: "report_123",
       sessionId: "sess_123",
@@ -522,7 +522,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("ApiError should have error.code and error.message", async () => {
     const types = await import("@/lib/types");
-    const error: typeof types.ApiError = {
+    const error: ApiError = {
       error: {
         code: "BAD_REQUEST",
         message: "Invalid request",
@@ -533,7 +533,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("PremiumState should have isPremium and optional expiresAt", async () => {
     const types = await import("@/lib/types");
-    const premium: typeof types.PremiumState = {
+    const premium: PremiumState = {
       version: 1,
       id: "me",
       isPremium: true,
@@ -547,7 +547,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("AiDisclosureState should have acknowledged and optional acknowledgedAt", async () => {
     const types = await import("@/lib/types");
-    const disclosure: typeof types.AiDisclosureState = {
+    const disclosure: AiDisclosureState = {
       version: 1,
       id: "me",
       acknowledged: true,
@@ -560,7 +560,7 @@ describe("AC-3: Type definitions match SPEC data models", () => {
 
   it("PromotionState should have firstSessionRewardGranted and optional grantedAt", async () => {
     const types = await import("@/lib/types");
-    const promo: typeof types.PromotionState = {
+    const promo: PromotionState = {
       version: 1,
       id: "me",
       firstSessionRewardGranted: false,
@@ -597,19 +597,19 @@ describe("Integration: RouteState discriminated union", () => {
     const types = await import("@/lib/types");
 
     // Test path: / (Home) - optional state
-    const homeState: typeof types.RouteState = {};
+    const homeState: RouteState = {};
     expect(homeState).toBeDefined();
 
     // Test path: /profile - optional from
-    const profileState: typeof types.RouteState = { from: "home" };
+    const profileState: RouteState = { from: "home" };
     expect(profileState.from).toBeDefined();
 
     // Test path: /workouts/:workoutId - optional workoutId
-    const workoutState: typeof types.RouteState = { workoutId: "squat" };
+    const workoutState: RouteState = { workoutId: "squat" };
     expect(workoutState.workoutId).toBe("squat");
 
     // Test path: /coach - workoutId + sessionId
-    const coachState: typeof types.RouteState = {
+    const coachState: RouteState = {
       workoutId: "pushup",
       sessionId: "sess_100",
     };
@@ -617,19 +617,19 @@ describe("Integration: RouteState discriminated union", () => {
     expect(coachState.sessionId).toBe("sess_100");
 
     // Test path: /session/summary - sessionId
-    const summaryState: typeof types.RouteState = { sessionId: "sess_200" };
+    const summaryState: RouteState = { sessionId: "sess_200" };
     expect(summaryState.sessionId).toBe("sess_200");
 
     // Test path: /report - sessionId
-    const reportState: typeof types.RouteState = { sessionId: "sess_300" };
+    const reportState: RouteState = { sessionId: "sess_300" };
     expect(reportState.sessionId).toBe("sess_300");
 
     // Test path: /history - no state needed
-    const historyState: typeof types.RouteState = {};
+    const historyState: RouteState = {};
     expect(historyState).toBeDefined();
 
     // Test path: /premium - optional from
-    const premiumState: typeof types.RouteState = { from: "report" };
+    const premiumState: RouteState = { from: "report" };
     expect(premiumState.from).toBe("report");
   });
 });
